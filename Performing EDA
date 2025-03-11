@@ -1,0 +1,96 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load Data
+df1 = pd.read_csv("C:\\Users\\bonal\\Desktop\\Customers.csv")
+df2 = pd.read_csv("C:\\Users\\bonal\\Desktop\\Products.csv")
+df3 = pd.read_csv("C:\\Users\\bonal\\Desktop\\Transactions.csv")
+
+# Clean Data: Remove missing values and duplicates
+for df in [df1, df2, df3]:  
+    df.dropna(inplace=True)  
+    df.drop_duplicates(inplace=True)
+
+# Merge datasets (if applicable, otherwise separate)
+combined_df = pd.concat([df1, df2, df3], ignore_index=True)
+combined_df.to_csv("combined_dataset.csv", index=False)
+print("Combined Dataset:\n", combined_df.head())
+
+# Dataset Overview
+print("\nDataset Info:")
+for i, df in enumerate([df1, df2, df3], start=1):
+    print(f"\nDataFrame {i} Info:")
+    print(df.info())
+
+print("\nMissing Values in Each Dataset:")
+for i, df in enumerate([df1, df2, df3], start=1):
+    print(f"\nDataFrame {i} Missing Values:\n", df.isnull().sum())
+
+print("\nData Types of Each Dataset:")
+for i, df in enumerate([df1, df2, df3], start=1):
+    print(f"\nDataFrame {i} Types:\n", df.dtypes)
+
+# Convert Transaction Date to DateTime
+df3['TransactionDate'] = pd.to_datetime(df3['TransactionDate'])
+
+# Extract Additional Time Features
+df3['Year'] = df3['TransactionDate'].dt.year
+df3['Month'] = df3['TransactionDate'].dt.month
+df3['Day'] = df3['TransactionDate'].dt.day
+df3['Weekday'] = df3['TransactionDate'].dt.day_name()
+
+# --- Visualization ---
+
+# 1. Distribution of Total Sales
+plt.figure(figsize=(10, 6))
+sns.histplot(df3['TotalValue'], bins=30, kde=True, color='royalblue')
+plt.title('Distribution of Total Value', fontsize=14)
+plt.xlabel('Total Value', fontsize=12)
+plt.ylabel('Frequency', fontsize=12)
+plt.grid(alpha=0.3)
+plt.show()
+
+# 2. Total Sales Over Time
+sales_over_time = df3.groupby('TransactionDate')['TotalValue'].sum().reset_index()
+plt.figure(figsize=(12, 6))
+plt.plot(sales_over_time['TransactionDate'], sales_over_time['TotalValue'], marker='o', linestyle='-', color='crimson')
+plt.title('Total Sales Over Time', fontsize=14)
+plt.xlabel('Date', fontsize=12)
+plt.ylabel('Total Sales', fontsize=12)
+plt.xticks(rotation=45)
+plt.grid(alpha=0.3)
+plt.show()
+plt.show()
+
+# 3. Top 10 Customers by Total Sales
+customer_sales = df3.groupby('CustomerID')['TotalValue'].sum().reset_index().sort_values(by='TotalValue', ascending=False)
+plt.figure(figsize=(12, 6))
+sns.barplot(x='TotalValue', y='CustomerID', data=customer_sales.head(10), palette='coolwarm')
+plt.title('Top 10 Customers by Total Sales', fontsize=14)
+plt.xlabel('Total Sales', fontsize=12)
+plt.ylabel('Customer ID', fontsize=12)
+plt.grid(alpha=0.3)
+plt.show()
+
+# 4. Monthly Sales Over Years
+monthly_sales = df3.groupby(['Year', 'Month'])['TotalValue'].sum().reset_index()
+plt.figure(figsize=(12, 6))
+sns.lineplot(x='Month', y='TotalValue', hue='Year', data=monthly_sales, marker='o', palette='viridis')
+plt.title('Monthly Sales Over Years', fontsize=14)
+plt.xlabel('Month', fontsize=12)
+plt.ylabel('Total Sales', fontsize=12)
+plt.xticks(ticks=np.arange(1, 13), labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+plt.grid(alpha=0.3)
+plt.show()
+
+# 5. Total Sales by Weekday
+weekday_sales = df3.groupby('Weekday')['TotalValue'].sum().reindex(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+plt.figure(figsize=(10, 6))
+sns.barplot(x=weekday_sales.index, y=weekday_sales.values, palette='magma')
+plt.title('Total Sales by Weekday', fontsize=14)
+plt.xlabel('Weekday', fontsize=12)
+plt.ylabel('Total Sales', fontsize=12)
+plt.grid(alpha=0.3)
+plt.show()
